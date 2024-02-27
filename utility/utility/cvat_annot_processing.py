@@ -1,10 +1,14 @@
 import glob
 import os
+import logging
 import random
 import shutil
 from dataclasses import dataclass
 
 import numpy as np
+import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 def mv_annot_img_and_label(
@@ -23,6 +27,24 @@ def mv_annot_img_and_label(
     new_img_file = os.path.basename(img_file).replace("frame", prefix)
     shutil.copyfile(img_file, os.path.join(dest_img_dir, new_img_file))
     shutil.copyfile(label_file, os.path.join(dest_label_dir, new_label_file))
+
+
+def cleanup_no_label_img(basedir: str) -> None:
+    """Remove frame with no object in it
+
+    Args:
+        basedir (str):
+    """
+    for label_file in sorted(
+        glob.glob(os.path.join(basedir, "obj_train_data/frame_*.txt"))
+    ):
+        img_file = label_file.replace(".txt", ".PNG")
+        try:
+            pd.read_csv(label_file)
+        except pd.errors.EmptyDataError:
+            logger.warning(f"No annotation {label_file} removing image and label")
+            os.remove(label_file)
+            os.remove(img_file)
 
 
 @dataclass
