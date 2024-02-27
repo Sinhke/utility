@@ -1,1 +1,1 @@
-## Utility repo for common functions
+# Utility repo for processing video and image annotation data

@@ -1,1 +1,0 @@
-# Utility repo for processing video and image annotation data
