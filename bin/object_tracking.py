@@ -37,7 +37,6 @@ def process_video(
         source=input_video,
         conf=confidence_threshold,
         show=show,
-        stream=True,
     )
     if save_video:
         project, fname = os.path.split(save_video)

@@ -2,52 +2,45 @@ import os
 import cv2 as cv
 import pandas as pd
 
+
 def sample_video(
     video_file: str,
     output_img_dir: str,
-    img_number: int,
+    img_number: int = -1,
     sampling_level: int = 10,
-    show_video: bool = True,
 ):
     """Sample input video and generate images from it.
 
     Args:
         video_file (str):
         output_img_dir (str):
-        img_number (int): Number of images to create.
+        img_number (int, optional): Number of images to create. Defaults to -1 for all frames.
         sampling_level (int, optional): How frequently sample the video. Defaults to 10.
-        show_video (bool, optional): show the video. Defaults to True.
     """
     basename = os.path.basename(video_file).rsplit(".", 1)[0]
     idx = 0
     saved_img_cnt = 0
 
     cap = cv.VideoCapture(video_file)
-    cv.startWindowThread()
 
     while cap.isOpened():
         ret, frame = cap.read()
         idx += 1
         # if frame is read correctly ret is True
         if not ret:
-            print("Can't receive frame (stream end?). Exiting ...")
-            break
-        if show_video:
-            cv.imshow("frame", frame)
-        if cv.waitKey(1) == ord("q"):
             break
 
-        if idx % sampling_level == 1 and saved_img_cnt < img_number:
+        if img_number == -1 or (
+            idx % sampling_level == 1 and saved_img_cnt < img_number
+        ):
             cv.imwrite(
-                os.path.join(output_img_dir, f"{basename}_frame{idx}.jpg"), frame
+                os.path.join(output_img_dir, f"{basename}_frame{idx}.png"), frame
             )
             saved_img_cnt += 1
-        if saved_img_cnt >= img_number and not show_video:
+        if img_number != -1 and saved_img_cnt >= img_number:
             break
 
     cap.release()
-    cv.destroyAllWindows()
-
 
 
 def play_video(video_input, annotation):

@@ -35,9 +35,7 @@ def cleanup_no_label_img(basedir: str) -> None:
     Args:
         basedir (str):
     """
-    for label_file in sorted(
-        glob.glob(os.path.join(basedir, "obj_train_data/frame_*.txt"))
-    ):
+    for label_file in sorted(glob.glob(os.path.join(basedir, "frame_*.txt"))):
         img_file = label_file.replace(".txt", ".PNG")
         try:
             pd.read_csv(label_file)
@@ -76,6 +74,10 @@ class CVATAnnot:
         """
         dest_img_dir = os.path.join(outdir, "train/images/shrimp/")
         dest_label_dir = os.path.join(outdir, "train/labels/shrimp/")
+        for dest_dir in [dest_img_dir, dest_label_dir]:
+            if not os.path.exists(dest_dir):
+                os.makedirs(dest_dir)
+
         for label_file in sorted(glob.glob(os.path.join(self.annot_dir, "*.txt"))):
             img_file = label_file.replace(".txt", ".PNG")
             if random.random() <= self.downsample_percent:

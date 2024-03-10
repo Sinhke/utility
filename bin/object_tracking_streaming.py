@@ -14,11 +14,19 @@ from ultralytics import YOLO
     default=0.5,
     help="Minimum confidence score for detections to be kept.",
 )
+@click.option(
+    "--tracker",
+    "-tr",
+    type=str,
+    default="bytetrack.yaml",
+    help="Tracking algo to use",
+)
 def process_video(
     input_video,
     model_path,
     save_video: str,
     confidence_threshold,
+    tracker: str = "bytesort.yaml",
 ):
     model = YOLO(model=model_path)
     project, fname = os.path.split(save_video)
@@ -31,6 +39,7 @@ def process_video(
         verbose=False,
         project=project,
         name=f"{os.path.basename(fname).split('.')[0]}",
+        tracker=tracker,
     )
 
     results = model.track(**tracking_parameters)  # Default tracker is ByteTrack
