@@ -13,14 +13,18 @@ import click
     default=0.5,
     help="Minimum confidence score for detections to be kept.",
 )
-@click.option("--show", is_flag=True, default=False, help="Show video")
-@click.option("--save_video", type=str, default=None, help="Save the tracking video")
+@click.option(
+    "--tracker",
+    "-tr",
+    type=str,
+    default="bytetrack.yaml",
+    help="Tracking algo to use",
+)
 def process_video(
     input_video,
     model_path,
     confidence_threshold,
-    show: bool = False,
-    save_video: str | None = None,
+    tracker: str = "bytesort.yaml",
 ):
     """
     Processes a video using a provided model, filtering detections below a confidence threshold.
@@ -36,15 +40,11 @@ def process_video(
     tracking_parameters = dict(
         source=input_video,
         conf=confidence_threshold,
-        show=show,
+        show=True,
+        tracker=tracker,
     )
-    if save_video:
-        project, fname = os.path.split(save_video)
-        tracking_parameters["save"] = True
-        tracking_parameters["project"] = project
-        tracking_parameters["name"] = f"{os.path.basename(fname).split('.')[0]}"
 
-    model.track(**tracking_parameters)  # Default tracker is ByteTrack
+    model.track(**tracking_parameters)
 
 
 if __name__ == "__main__":
