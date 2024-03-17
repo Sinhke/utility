@@ -24,12 +24,12 @@
 
 # FRONT VIEW Run every 5 minutes the following script and record for 120second(2min)
 # uncomment this for front view camera
-# */5 * * * /home/pi/record_video_front.sh 120000
+# */15 * * * * bash /home/pi/record_video_front.sh 180000
 
 # SIDE VIEW Run every 5 minutes the following script and record for 120second(2min)
 # uncomment this for side view camera
-# */5 * * * /home/pi/record_video_side.sh 120000
+# */15 * * * * bash /home/pi/record_video_side.sh 180000
 
 # TOP VIEW Run every 5 minutes the following script and record for 120second(2min)
 # uncomment this for front view camera
-# */5 * * * /home/pi/record_video_top.sh 120000
+# */15 * * * * bash /home/pi/record_video_top.sh 180000

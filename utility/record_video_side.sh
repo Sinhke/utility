@@ -6,7 +6,7 @@
 # (-1, 15.25, 13)
 
 DURATION=$1
-IP_ADDRESS=`ifconfig | grep "inet 192" | awk '{print $2}' | awk -F '.' '{print $4}'`
+IP_ADDRESS=`/usr/sbin/ifconfig | grep "inet 192" | awk '{print $2}' | awk -F '.' '{print $4}'`
 TIMESTAMP=`date '+%Y_%m_%d_%H_%M'`
 OUTPUT=record_${IP_ADDRESS}_${TIMESTAMP}.mjpeg
 WIDTH=1500
