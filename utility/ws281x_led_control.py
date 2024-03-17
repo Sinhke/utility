@@ -84,14 +84,32 @@ def theaterChaseRainbow(strip, wait_ms=50):
                 strip.setPixelColor(i + q, 0)
 
 
-def strobe_effect(strip, color, delay_time, led_array=None):
+def strobe_effect(strip, delay_time, led_array=None):
     """Strobing effect function."""
-    colorWipe(strip, color, 0, led_array)
+    for idx, color in led_array:
+        strip.setPixelColor(idx, color)
     strip.show()
     time.sleep(delay_time)
-    colorWipe(strip, Color(0, 0, 0), 0, led_array)
+    for idx, color in led_array:
+        strip.setPixelColor(idx, Color(0, 0, 0))
     strip.show()
     time.sleep(delay_time)
+
+
+def parse_led_config(led_config: str) -> list:
+    led_config_list = led_config.split(",")
+    idx_and_color = []
+    for elem in led_config_list:
+        idx, r, g, b = elem.split(":")
+        r, g, b = [int(i) for i in [r, g, b]]
+        if "-" in idx:
+            start, stop = [int(i) for i in idx.split("-")]
+            for i in range(start, stop + 1):
+                idx_and_color.append([i, Color(r, g, b)])
+        else:
+            idx_and_color.append([int(idx), Color(r, g, b)])
+
+    return idx_and_color
 
 
 # Main program logic follows:
@@ -109,11 +127,13 @@ if __name__ == "__main__":
         "--color", nargs=3, type=int, default=[255, 255, 255], help="color tuple"
     )
     parser.add_argument(
-        "--list-index",
-        nargs="*",
-        type=int,
+        "--led-config",
+        type=str,
         default=None,
-        help="list of array indexes, Defaults to None and will turn on all LEDs.",
+        help=(
+            "list of array indexes with color specification. Example: 6-10:255:0:0,11-16:0:255:0 = "
+            "this will turn on LED 6-10 with RED, 11-16 with BLUE"
+        ),
     )
     parser.add_argument(
         "--strobe",
@@ -139,17 +159,16 @@ if __name__ == "__main__":
 
     color = Color(*args.color)
     timeout = args.timeout
-    if not args.list_index:
-        led_array = [i for i in range(args.led_count)]
+    if not args.led_config:
+        led_array = [[i, color] for i in range(args.led_count)]
     else:
-        led_array = args.list_index
+        led_array = parse_led_config(args.led_config)
 
     if args.strobe:
         start_time = time.time()
         while True:
             strobe_effect(
                 strip=strip,
-                color=color,
                 delay_time=args.strobe,
                 led_array=led_array,
             )
@@ -157,7 +176,7 @@ if __name__ == "__main__":
             if (curr_time - start_time) >= timeout:
                 break
     else:
-        for idx in led_array:
+        for idx, color in led_array:
             strip.setPixelColor(idx, color)
         strip.show()
         time.sleep(timeout)
