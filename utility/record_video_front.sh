@@ -3,7 +3,7 @@
 # Y coordinate is from back to front increasing
 # Z coordinate is bottom to up increasing
 # (0, 0, 0) = Front, mid point of the aquarium
-# (0, 14, 13.75)
+# (-5, 16.5, 13.75)
 
 DURATION=$1
 IP_ADDRESS=`/usr/sbin/ifconfig | grep "inet 192" | awk '{print $2}' | awk -F '.' '{print $4}'`

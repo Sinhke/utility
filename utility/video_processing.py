@@ -1,13 +1,13 @@
 import os
 import cv2 as cv
 import pandas as pd
+import random
 
 
 def sample_video(
     video_file: str,
     output_img_dir: str,
     img_number: int = -1,
-    sampling_level: int = 10,
 ):
     """Sample input video and generate images from it.
 
@@ -22,7 +22,9 @@ def sample_video(
     saved_img_cnt = 0
 
     cap = cv.VideoCapture(video_file)
-
+    frame_count = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
+    prob = img_number / frame_count
+    print(f"Sampling probability={prob} FRAME_COUNT={frame_count}")
     while cap.isOpened():
         ret, frame = cap.read()
         idx += 1
@@ -30,11 +32,9 @@ def sample_video(
         if not ret:
             break
 
-        if img_number == -1 or (
-            idx % sampling_level == 1 and saved_img_cnt < img_number
-        ):
+        if img_number == -1 or (random.random() <= prob):
             cv.imwrite(
-                os.path.join(output_img_dir, f"{basename}_frame{idx}.png"), frame
+                os.path.join(output_img_dir, f"{basename}_frame{idx:07}.png"), frame
             )
             saved_img_cnt += 1
         if img_number != -1 and saved_img_cnt >= img_number:

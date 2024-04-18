@@ -3,7 +3,7 @@
 # Y coordinate is from back to front increasing
 # Z coordinate is bottom to up increasing
 # (0, 0, 0) = Front, mid point of the aquarium
-# (0, -6, 27.5) 
+# (0, -6, 38) 
 
 DURATION=$1
 IP_ADDRESS=`/usr/sbin/ifconfig | grep "inet 192" | awk '{print $2}' | awk -F '.' '{print $4}'`
@@ -14,4 +14,4 @@ HEIGHT=1786
 LENS_POS=7.5
 
 
-rpicam-vid -f --autofocus-mode manual --lens-position $LENS_POS --width $WIDTH --height $HEIGHT --codec mjpeg -t $DURATION -o $OUTPUT
+rpicam-vid -f --width $WIDTH --height $HEIGHT --codec mjpeg -t $DURATION -o $OUTPUT #--autofocus-mode manual --lens-position $LENS_POS 
