@@ -8,6 +8,7 @@ def sample_video(
     video_file: str,
     output_img_dir: str,
     img_number: int = -1,
+    crop: list[int] | None = None,
 ):
     """Sample input video and generate images from it.
 
@@ -33,9 +34,12 @@ def sample_video(
             break
 
         if img_number == -1 or (random.random() <= prob):
-            cv.imwrite(
-                os.path.join(output_img_dir, f"{basename}_frame{idx:07}.png"), frame
-            )
+            frame_name = os.path.join(output_img_dir, f"{basename}_frame{idx:07}.png")
+            if crop is not None:
+                x1, y1, width, height = crop
+                frame = frame[y1 : y1 + height, x1 : x1 + width]
+
+            cv.imwrite(frame_name, frame)
             saved_img_cnt += 1
         if img_number != -1 and saved_img_cnt >= img_number:
             break

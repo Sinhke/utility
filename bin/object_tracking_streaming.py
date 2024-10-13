@@ -30,7 +30,7 @@ def process_video(
 ):
     model = YOLO(model=model_path)
     project, fname = os.path.split(save_video)
-
+    detection_result = f"{fname.removesuffix('.mp4')}_detection.csv"
     tracking_parameters = dict(
         source=input_video,
         conf=confidence_threshold,
@@ -40,12 +40,17 @@ def process_video(
         project=project,
         name=f"{os.path.basename(fname).split('.')[0]}",
         tracker=tracker,
+        device="mps",
+        line_width=1,
     )
 
     results = model.track(**tracking_parameters)  # Default tracker is ByteTrack
     # results is a generator and need to realized in order to save the video
-    for _ in results:
-        pass
+
+    for elem in results:
+        bboxes = [result.boxes.xywh for result in results]
+        print(type(elem), elem)
+        # detection_result
 
 
 if __name__ == "__main__":

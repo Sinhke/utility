@@ -67,7 +67,7 @@ class CVATAnnot:
             self.downsample_percent = downsample_percent
 
     def output_fltrd_data(self, outdir: str) -> None:
-        """OUtput filtered data
+        """Output filtered data
 
         Args:
             outdir (str):
