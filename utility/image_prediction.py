@@ -6,6 +6,8 @@ import tempfile
 from collections import defaultdict
 
 import cv2
+import numpy as np
+import pandas as pd
 from ultralytics import YOLO
 
 
@@ -89,7 +91,7 @@ def show_tracked_video(images, bboxes):
     cv2.waitKey(1)
 
 
-def get_object_speeds(results):
+def get_object_speeds(results, speed_thresholds):
     """Receives results dictionary from YOLO model tracking result.
 
     Args:
@@ -119,20 +121,20 @@ def get_object_speeds(results):
     obj_dist_delta = pd.DataFrame.from_dict(obj_dist_delta)
     obj_dist_delta_summary = obj_dist_delta.describe().T
     obj_dist_delta_summary["color"] = obj_dist_delta_summary.apply(
-        lambda x: get_speed_color(x["mean"]), axis=1
+        lambda x: get_speed_color(x["mean"], speed_thresholds), axis=1
     )
     return obj_dist_delta_summary
 
 
-def get_speed_color(speed):
-    if speed <= 5:
-        return 6  # red
-    elif speed <= 10:
-        return 7  # yellow
-    elif speed > 10:
-        return 13  # green
+def get_speed_color(speed, speed_thresholds):
+    if speed <= speed_thresholds["slow"]:
+        return 6  # red not moving much
+    elif speed <= speed_thresholds["fast"]:
+        return 2  # white normal movement
+    elif speed > speed_thresholds["fast"]:
+        return 0  # blue fast
 
-    return 0  # blue
+    return 3  # aquamarine for unknown
 
 
 class TemporaryDirectory:
@@ -166,8 +168,8 @@ def create_video_from_images(frame_folder, output_video_path):
     cv2.destroyAllWindows()
 
 
-def generate_speed_color_coded_video(results: dict, output_video_path: str):
-    obj_dist_delta_summary = get_object_speeds(results)
+def generate_speed_color_coded_video(results: dict, output_video_path: str, speed_thresholds: dict = {"slow": 5, "fast": 10}):
+    obj_dist_delta_summary = get_object_speeds(results, speed_thresholds)
     speed_color = obj_dist_delta_summary["color"].to_dict()
     # Write annotated images into temp directory
     with TemporaryDirectory() as temp_dir:
@@ -179,8 +181,9 @@ def generate_speed_color_coded_video(results: dict, output_video_path: str):
             result.plot(
                 save=True,
                 filename=annot_fname,
-                line_width=4,
+                line_width=2,
                 custom_color_ids=speed_color,
             )
 
         create_video_from_images(temp_dir, output_video_path)
+    return obj_dist_delta_summary

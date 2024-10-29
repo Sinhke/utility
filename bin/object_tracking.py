@@ -1,11 +1,18 @@
 import os
-from ultralytics import YOLO
 import click
+import pandas as pd
+from ultralytics import YOLO
 
 
 @click.command()
 @click.option("--input_video", "-v", type=click.Path(exists=True))
 @click.option("--model_path", "-m", type=click.Path(exists=True))
+@click.option(
+    "--save_dir",
+    type=click.Path(exists=True),
+    required=True,
+    help="Save the tracking video to this directory.",
+)
 @click.option(
     "--confidence-threshold",
     "-c",
@@ -20,31 +27,54 @@ import click
     default="bytetrack.yaml",
     help="Tracking algo to use",
 )
+@click.option(
+    "--max_frames",
+    "-mf",
+    type=int,
+    default=-1,
+    help="Maximum frames to process. -1 for all frame.",
+)
 def process_video(
     input_video,
     model_path,
+    save_dir: str,
     confidence_threshold,
     tracker: str = "bytesort.yaml",
+    max_frames: int = -1,
 ):
-    """
-    Processes a video using a provided model, filtering detections below a confidence threshold.
-
-    Args:
-        input_video (str): Path to the input video file.
-        model_path (str): Path to the model file.
-        confidence_threshold (float): Minimum confidence score for detections.
-    """
-
-    # Load the model
     model = YOLO(model=model_path)
+    detection_result = os.path.join(
+        save_dir, f"{os.path.basename(input_video).removesuffix('.mp4')}_detection.csv"
+    )
     tracking_parameters = dict(
         source=input_video,
         conf=confidence_threshold,
-        show=True,
+        save=True,
+        stream=True,
+        verbose=False,
+        project="TEST",
+        name=f"{os.path.basename(input_video).split('.')[0]}",
+        save_dir=save_dir,
         tracker=tracker,
+        device="mps",
+        line_width=1,
     )
 
-    model.track(**tracking_parameters)
+    results = model.track(**tracking_parameters)  # Default tracker is ByteTrack
+    # results is a generator and need to realized in order to save the video
+
+    bbox_pos = []
+    for idx, result in enumerate(results):
+        if max_frames != -1 and idx >= max_frames:
+            break
+
+        for bbox in result.boxes.xywh:
+            frame_and_coord = [idx]
+            frame_and_coord = frame_and_coord + bbox.tolist()
+            bbox_pos.append(frame_and_coord)
+
+    bbox_df = pd.DataFrame(bbox_pos, columns=["frame", "x", "y", "width", "height"])
+    bbox_df.to_csv(detection_result, index=False)
 
 
 if __name__ == "__main__":
