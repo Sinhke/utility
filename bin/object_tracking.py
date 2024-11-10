@@ -52,7 +52,7 @@ def process_video(
         save=True,
         stream=True,
         verbose=False,
-        project="TEST",
+        project=f"{save_dir}",
         name=f"{os.path.basename(input_video).split('.')[0]}",
         save_dir=save_dir,
         tracker=tracker,
