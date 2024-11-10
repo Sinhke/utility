@@ -127,7 +127,9 @@ def get_rect_box(
     return rect_patch
 
 
-def show_img_with_bounding_box(img_file: str, bbox_coord_file: str) -> None:
+def show_img_with_bounding_box(
+    img_file: str, bbox_coord_file: str, figsize=None
+) -> None:
     """Show an image with bounding box
 
     Args:
@@ -150,7 +152,7 @@ def show_img_with_bounding_box(img_file: str, bbox_coord_file: str) -> None:
             get_rect_box_yolo(rel_xmin, rel_xmax, rel_ymin, rel_ymax, width, height)
         )
 
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(figsize=figsize)
     ax.imshow(pixels)
     # Add the patch to the Axes
     for rect in rect_patch_list:
