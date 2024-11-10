@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.scripts]
 yolo_track = "bin.object_tracking:process_video"
 yolo_track_stream = "bin.object_tracking_streaming:process_video"
-video_sample = "bin.video_sampling:sample_video_for_images"
+yolo_inference = "bin.image_inference:create_cvat_importable_annotations"
 
 [tool.poetry.dependencies]
 python = "^3.10"
