@@ -21,6 +21,7 @@ opencv-python = "^4.9.0.80"
 pillow = "^10.2.0"
 ultralytics = "^8.1.18"
 click = "^8.1.7"
+scikit-learn = "^1.5.2"
 
 
 [build-system]
