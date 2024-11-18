@@ -60,6 +60,11 @@ def get_image_and_label_list(image_path, label_path):
 def prepare_training_dataset(
     image_path, label_path, out_training_data_dir, config_name, config_template
 ):
+    """
+    This CLI tool prepares the training dataset for YOLO training. It takes the path to the images and labels directory.
+    Image names and label names should match. It splits the dataset into train, test, and validation sets and creates a
+    configuration YAML file for the training.
+    """
     img_and_label_list = get_image_and_label_list(image_path, label_path)
     train_data, test_data = train_test_split(
         img_and_label_list, test_size=0.3, random_state=42
