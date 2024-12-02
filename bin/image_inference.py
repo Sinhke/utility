@@ -52,6 +52,10 @@ def get_initial_prediction(images, model_path, out_dir, conf=0.5):
     help="Minimum confidence score for detections to be kept.",
 )
 def create_cvat_importable_annotations(image_dir, out_dir, model_path, conf=0.5):
+    """This CLI runs YOLO inference on images inside the image_dir and output result into out_dir.
+    It will create folder structure compatible with CVAT. You can export this output dir into CVAT
+    so initial prediction will be set.
+    """
     os.makedirs(out_dir, exist_ok=True)
     # Add base files
     with open(os.path.join(out_dir, "obj.data"), "w") as fp:

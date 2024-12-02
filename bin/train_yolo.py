@@ -42,8 +42,8 @@ def train_custom_model(
     device: str = "cuda",
 ):
     """
-    Training YOLO v8
-    Fine tune the latest YOLO v8 or resume training of a given model.
+    Training YOLO model.
+    Fine tune the latest YOLO model or resume training of a given model.
     """
 
     if resume_training:
