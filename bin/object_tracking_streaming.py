@@ -19,11 +19,19 @@ import click
     default="bytetrack.yaml",
     help="Tracking algo to use",
 )
+@click.option(
+    "--device",
+    "-d",
+    type=str,
+    default="cuda",
+    help="Device to run the model on. Default is cuda.",
+)
 def process_video(
     input_video,
     model_path,
     confidence_threshold,
     tracker: str = "bytesort.yaml",
+    device: str = "cuda",
 ):
     """
     Processes a video using a provided model, filtering detections below a confidence threshold.
@@ -41,6 +49,7 @@ def process_video(
         conf=confidence_threshold,
         show=True,
         tracker=tracker,
+        device=device,
     )
 
     model.track(**tracking_parameters)

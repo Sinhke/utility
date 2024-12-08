@@ -34,6 +34,13 @@ from ultralytics import YOLO
     default=-1,
     help="Maximum frames to process. -1 for all frame.",
 )
+@click.option(
+    "--device",
+    "-d",
+    type=str,
+    default="cuda",
+    help="Device to run the model on. Default is cuda.",
+)
 def process_video(
     input_video,
     model_path,
@@ -41,6 +48,7 @@ def process_video(
     confidence_threshold,
     tracker: str = "bytesort.yaml",
     max_frames: int = -1,
+    device: str = "cuda",
 ):
     model = YOLO(model=model_path)
     detection_result = os.path.join(
@@ -56,7 +64,7 @@ def process_video(
         name=f"{os.path.basename(input_video).split('.')[0]}",
         save_dir=save_dir,
         tracker=tracker,
-        device="mps",
+        device=device,
         line_width=1,
     )
 

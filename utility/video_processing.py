@@ -25,7 +25,11 @@ def sample_video(
     cap = cv.VideoCapture(video_file)
     frame_count = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
     prob = img_number / frame_count
-    print(f"Sampling probability={prob} FRAME_COUNT={frame_count}")
+    if img_number != -1:
+        print(f"Sampling probability={prob} FRAME_COUNT={frame_count}")
+    else:
+        print(f"Sampling all frames FRAME_COUNT={frame_count}")
+
     while cap.isOpened():
         ret, frame = cap.read()
         idx += 1
