@@ -14,6 +14,13 @@
 # clone utility repo and cd into it
 > poetry install
 ```
+
+## Use the existing virtual environment
+This environment should have this repo already installed
+```
+source /home/jupyter/.venv/dev_env/bin/activate
+```
+
 ## Available executables
 ### `sample_video` = Sample images from video
 ```
