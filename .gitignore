@@ -2,3 +2,12 @@
 .vscode
 
 **/__pycache__/**
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+pyvenv.cfg
+lib/
+bin/
+include/
+share/
