@@ -76,7 +76,7 @@ def process_video(
         if max_frames != -1 and idx >= max_frames:
             break
 
-        for bbox in result.boxes.xywh:
+        for bbox in result.obb.xyxyxyxy:
             frame_and_coord = [idx]
             frame_and_coord = frame_and_coord + bbox.tolist()
             bbox_pos.append(frame_and_coord)
