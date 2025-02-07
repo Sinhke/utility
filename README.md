@@ -134,3 +134,53 @@ Options:
   -d, --device TEXT               Device to run the model on. Default is cuda.
   --help                          Show this message and exit.
 ```
+---
+### `yolo_object_extraction` = Extract objects from images
+```
+Usage: yolo_object_extraction [OPTIONS] COMMAND [ARGS]...
+
+  Object detection and extraction utilities
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  draw-blob-detection  Run blob detection on image and save visualization
+  object-extraction    Run object detection and extract images
+```
+
+---
+### `yolo_object_extraction object-extraction` = Run object detection and extract images
+```
+Usage: object_extraction [OPTIONS]
+
+Options:
+  --image_path TEXT   Path to input image  [required]
+  --output_dir TEXT   Directory to save extracted objects  [required]
+  --model_path TEXT   Path to YOLO model weights  [required]
+  --confidence FLOAT  Confidence threshold for detection (default: 0.5)
+  --scale FLOAT       Scale factor for enlarging detected objects; this add
+                      more leeway to the bounding box (default: 1.3)
+  --help              Show this message and exit.
+```
+---
+### `yolo_object_extraction draw-blob-detection` = Draw blob detection on image
+```
+Usage: yolo_object_extraction draw-blob-detection [OPTIONS]
+
+  Run blob detection on image and save visualization
+
+Options:
+  --image_path TEXT        Path to input image  [required]
+  --output_path TEXT       Path to save output image with detected blobs
+                           [required]
+  --min_threshold INTEGER  Minimum threshold for blob detection (default: 10)
+  --max_threshold INTEGER  Maximum threshold for blob detection (default: 200)
+  --min_area FLOAT         Minimum area of blob (default: 100)
+  --max_area FLOAT         Maximum area of blob (default: 5000)
+  --min_circularity FLOAT  Minimum circularity of blob (default: 0.1)
+  --min_convexity FLOAT    Minimum convexity of blob (default: 0.87)
+  --min_inertia FLOAT      Minimum inertia ratio of blob (default: 0.01)
+  --help                   Show this message and exit.
+```
+---

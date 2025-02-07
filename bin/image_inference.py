@@ -5,9 +5,46 @@ import shutil
 from ultralytics import YOLO
 from PIL import Image
 import click
+import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def get_obb_coordinates(bboxes):
+    bbox_pos = []
+    for bbox in bboxes:
+        rectangle = bbox.numpy().reshape((-1, 2)).astype(np.int32)
+        bbox_pos.append(rectangle)
+    return bbox_pos
+
+
+def get_bbox_coordinates(bboxes, width, height):
+    bbox_pos = []
+    for bbox in bboxes:
+        xcenter, ycenter, xwidth, ywidth = bbox.tolist()
+        rel_xcenter = xcenter / width
+        rel_ycenter = ycenter / height
+        rel_width = xwidth / width
+        rel_height = ywidth / height
+        bbox_pos.append([rel_xcenter, rel_ycenter, rel_width, rel_height])
+    return bbox_pos
+
+
+def get_result_coordinates(results, use_normalized_coordinates=False):
+    bbox_pos_list = []
+    for result in results:
+        if result.obb.xyxyxyxyn and use_normalized_coordinates:
+            bbox_pos = get_obb_coordinates(result.obb.xyxyxyxyn)
+        elif result.obb.xyxyxyxy is not None:
+            bbox_pos = get_obb_coordinates(result.obb.xyxyxyxy)
+        elif result.boxes.xywh is not None:
+            bbox_pos = get_bbox_coordinates(
+                result.boxes.xywh, result.width, result.height
+            )
+        bbox_pos_list.append(bbox_pos)
+
+    return bbox_pos_list
 
 
 def get_initial_prediction(images, model_path, out_dir, conf=0.5):
@@ -16,23 +53,21 @@ def get_initial_prediction(images, model_path, out_dir, conf=0.5):
     model = YOLO(model_path)
     # Run batched inference on a list of images
     results = model.predict(images, conf=conf)  # return a list of Results objects
+
+    bbox_coordinates = get_result_coordinates(results, use_normalized_coordinates=True)
+
     # Process results list
-    for img_file, result in zip(images, results):
+    for img_file, bbox_coord in zip(images, bbox_coordinates):
         # Copy the image file to the obj_train_data directory
         shutil.copy(img_file, obj_inference_dir)
         basename = os.path.basename(img_file)
         img_obj = Image.open(img_file)
-        width, height = img_obj.width, img_obj.height
         with open(
             os.path.join(obj_inference_dir, f"{basename.removesuffix('.png')}.txt"), "w"
         ) as fp:
-            for rect in result.boxes.xywh:
-                xcenter, ycenter, xwidth, ywidth = rect.tolist()
-                rel_xcenter = xcenter / width
-                rel_ycenter = ycenter / height
-                rel_width = xwidth / width
-                rel_height = ywidth / height
-                fp.write(f"0 {rel_xcenter} {rel_ycenter} {rel_width} {rel_height}\n")
+            for bbox in bbox_coord:
+                line = " ".join([str(x) for x in bbox])
+                fp.write(f"0 {line}\n")
 
 
 @click.command()
