@@ -8,43 +8,162 @@ from collections import defaultdict
 import cv2
 import numpy as np
 import pandas as pd
+from loguru import logger
 from ultralytics import YOLO
+import yaml
 
 
-def get_initial_prediction(images, model_path, conf=0.5, device="cpu", persist=False):
+def get_obb_coordinates(bboxes):
+    """
+    Extract oriented bounding box coordinates from model predictions.
+
+    Args:
+        bboxes: List of bounding box predictions from YOLO model, containing coordinates
+               in the format of [x1,y1, x2,y2, x3,y3, x4,y4]
+
+    Returns:
+        list: List of numpy arrays containing the coordinates of oriented bounding boxes,
+              where each array has shape (4,2) representing 4 corner points
+    """
+    bbox_pos = []
+    for bbox in bboxes:
+        rectangle = bbox.numpy().reshape((-1, 2))
+        bbox_pos.append(rectangle)
+    print(f"Found {len(bbox_pos)} bounding boxes")
+    return bbox_pos
+
+
+def get_bbox_coordinates(bboxes, width, height):
+    """
+    Extract bounding box coordinates from model predictions.
+
+    Args:
+        bboxes: List of bounding box predictions from YOLO model, containing coordinates
+               in the format of [xcenter, ycenter, xwidth, ywidth]
+        width: Width of the image
+        height: Height of the image
+
+    Returns:
+        list: List of numpy arrays containing the coordinates of bounding boxes,
+              where each array has shape (4,2) representing 4 corner points
+    """
+    bbox_pos = []
+    for bbox in bboxes:
+        xcenter, ycenter, xwidth, ywidth = bbox.tolist()
+        rel_xcenter = xcenter / width
+        rel_ycenter = ycenter / height
+        rel_width = xwidth / width
+        rel_height = ywidth / height
+        bbox_pos.append([rel_xcenter, rel_ycenter, rel_width, rel_height])
+    return bbox_pos
+
+
+def get_result_coordinates(results):
+    """
+    Extract bounding box coordinates from model predictions.
+
+    Args:
+        results: List of model predictions from YOLO tracking results
+
+    Returns:
+        list: List of numpy arrays containing the coordinates of bounding boxes,
+              where each array has shape (4,2) representing 4 corner points
+    """
+    bbox_pos_list = []
+    for result in results:
+        if result.obb.xyxyxyxyn is not None:
+            bbox_pos = get_obb_coordinates(result.obb.xyxyxyxyn)
+        elif result.boxes.xywh is not None:
+            bbox_pos = get_bbox_coordinates(
+                result.boxes.xywh, result.width, result.height
+            )
+        bbox_pos_list.append(bbox_pos)
+
+    return bbox_pos_list
+
+
+def get_initial_prediction(
+    images, model_path, conf=0.5, device="cuda", persist=False, predict=False
+):
     model = YOLO(model_path)
     # Run batched inference on a list of images
-    results = model.track(
-        images, conf=conf, stream=True, device=device, persist=persist
-    )  # return a list of Results objects
+    if predict:
+        results = model.predict(images, conf=conf, device=device)
+    else:
+        results = model.track(
+            images, conf=conf, device=device, persist=persist, stream=True
+        )
     realized_result = {}
+    bbox_coordinates = get_result_coordinates(results)
     # Process results list
-    for img_file, result in zip(images, results):
+    for img_file, result in zip(images, bbox_coordinates):
+        # result should contain a list of coordinates for each object in the image
         realized_result[img_file] = result
 
     return realized_result
 
 
 def create_cvat_importable_annotations(
-    image_dir, model_path, outdir, conf=0.5, label_name="shrimp"
+    image_dir, model_path, outdir, conf=0.5, label_name="shrimp", max_images=None
 ):
-    # Add base files
-    with open(os.path.join(outdir, "obj.data"), "w") as fp:
-        fp.write(
-            "classes = 1\ntrain = data/train.txt\n\nnames = data/obj.names\nbackup = backup/"
-        )
-    with open(os.path.join(outdir, "obj.names"), "w") as fp:
-        fp.write(label_name)
-
-    images = sorted(glob.glob(f"{image_dir}*.png") + glob.glob(f"{image_dir}*.PNG"))
-
-    with open(os.path.join(outdir, "train.txt")) as fp:
-        for image_file in images:
-            fp.write(f"data/obj_train_data/{os.path.basename(image_file)}\n")
-
-    get_initial_prediction(
-        images=images, model_path=model_path, outdir=outdir, conf=conf
+    images = sorted(
+        glob.glob(os.path.join(image_dir, "*.png"))
+        + glob.glob(os.path.join(image_dir, "*.PNG"))
     )
+    if max_images != -1:
+        images = images[:max_images]
+
+    logger.info(f"Annotating {len(images)} images")
+
+    os.makedirs(outdir, exist_ok=True)
+
+    base_train_str = "Train"
+    # create data.yaml file
+    data_yaml = {
+        "train": "images/train",
+        "names": {0: label_name},
+        "path": ".",
+    }
+
+    with open(os.path.join(outdir, "data.yaml"), "w") as fp:
+        yaml.dump(data_yaml, fp)
+
+    # Move images to images/train directory
+    image_outdir = os.path.join(outdir, "images/train")
+    os.makedirs(image_outdir, exist_ok=True)
+    for image in images:
+        shutil.copy(image, os.path.join(image_outdir, os.path.basename(image)))
+
+    realized_coordinates = get_initial_prediction(
+        images=images, model_path=model_path, conf=conf
+    )
+    # Write labels to labels/train directory
+    labels_outdir = os.path.join(outdir, "labels/train")
+    os.makedirs(labels_outdir, exist_ok=True)
+    for img_file, result in realized_coordinates.items():
+        label_file = os.path.join(
+            labels_outdir, os.path.basename(img_file).replace(".png", ".txt")
+        )
+        with open(label_file, "w") as fp:
+            for box_coords in result:
+                coord_str = ""
+                for coord in box_coords:
+                    coord_str += f"{coord[0]} {coord[1]} "
+                fp.write(f"0 {coord_str}\n")
+
+    # Zip the outdir in its parent directory
+    parent_dir = os.path.dirname(outdir)
+    outdir_name = os.path.basename(outdir)
+    zip_file_name = os.path.join(parent_dir, outdir_name)
+    shutil.make_archive(
+        zip_file_name,
+        "zip",
+        parent_dir,
+        outdir_name,
+    )
+    zip_file_name = zip_file_name + ".zip"
+    logger.info(f"Created cvat importable annotations at {zip_file_name}")
+    return zip_file_name
 
 
 def show_tracked_video(images, bboxes):
@@ -168,7 +287,11 @@ def create_video_from_images(frame_folder, output_video_path):
     cv2.destroyAllWindows()
 
 
-def generate_speed_color_coded_video(results: dict, output_video_path: str, speed_thresholds: dict = {"slow": 5, "fast": 10}):
+def generate_speed_color_coded_video(
+    results: dict,
+    output_video_path: str,
+    speed_thresholds: dict = {"slow": 5, "fast": 10},
+):
     obj_dist_delta_summary = get_object_speeds(results, speed_thresholds)
     speed_color = obj_dist_delta_summary["color"].to_dict()
     # Write annotated images into temp directory

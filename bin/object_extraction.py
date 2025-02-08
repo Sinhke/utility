@@ -4,74 +4,7 @@ import os
 from ultralytics import YOLO
 import click
 
-
-def get_obb_coordinates(bboxes):
-    """
-    Extract oriented bounding box coordinates from model predictions.
-
-    Args:
-        bboxes: List of bounding box predictions from YOLO model, containing coordinates
-               in the format of [x1,y1, x2,y2, x3,y3, x4,y4]
-
-    Returns:
-        list: List of numpy arrays containing the coordinates of oriented bounding boxes,
-              where each array has shape (4,2) representing 4 corner points
-    """
-    bbox_pos = []
-    for bbox in bboxes:
-        rectangle = bbox.numpy().reshape((-1, 2)).astype(np.int32)
-        bbox_pos.append(rectangle)
-    print(f"Found {len(bbox_pos)} bounding boxes")
-    return bbox_pos
-
-
-def get_bbox_coordinates(bboxes, width, height):
-    """
-    Extract bounding box coordinates from model predictions.
-
-    Args:
-        bboxes: List of bounding box predictions from YOLO model, containing coordinates
-               in the format of [xcenter, ycenter, xwidth, ywidth]
-        width: Width of the image
-        height: Height of the image
-
-    Returns:
-        list: List of numpy arrays containing the coordinates of bounding boxes,
-              where each array has shape (4,2) representing 4 corner points
-    """
-    bbox_pos = []
-    for bbox in bboxes:
-        xcenter, ycenter, xwidth, ywidth = bbox.tolist()
-        rel_xcenter = xcenter / width
-        rel_ycenter = ycenter / height
-        rel_width = xwidth / width
-        rel_height = ywidth / height
-        bbox_pos.append([rel_xcenter, rel_ycenter, rel_width, rel_height])
-    return bbox_pos
-
-
-def get_result_coordinates(results):
-    """
-    Extract bounding box coordinates from model predictions.
-
-    Args:
-        results: List of model predictions from YOLO tracking results
-
-    Returns:
-        list: List of numpy arrays containing the coordinates of bounding boxes,
-              where each array has shape (4,2) representing 4 corner points
-    """
-    bbox_pos_list = []
-    for result in results:
-        if result.obb.xyxyxyxy is not None:
-            bbox_pos = get_obb_coordinates(result.obb.xyxyxyxy)
-        elif result.boxes.xywh is not None:
-            bbox_pos = get_bbox_coordinates(
-                result.boxes.xywh, result.width, result.height
-            )
-        bbox_pos_list.append(bbox_pos)
-
-    return bbox_pos_list
+from utility.image_prediction import get_obb_coordinates, get_bbox_coordinates
 
 
 def get_center_point(coords):
@@ -308,15 +241,10 @@ def draw_blob_detection(image, outdir):
 def run_prediction_and_extract_image(
     image_path, model_path, output_dir, confidence_threshold=0.5, scale=1.3
 ):
-    images = [image_path]
-    # images = [
-    #     "/mnt/big_disk/obb_training_data/beta2_training_data/images/Bloo/200.b0.3.20250106_frame0001262.png"
-    # ]
-
     model = YOLO(model=model_path)
 
     tracking_parameters = dict(
-        source=images,
+        source=[image_path],
         conf=confidence_threshold,
         device="cpu",
         line_width=1,

@@ -139,6 +139,7 @@ Options:
 ```
 Usage: yolo_object_extraction [OPTIONS] COMMAND [ARGS]...
 
+
   Object detection and extraction utilities
 
 Options:
@@ -183,4 +184,29 @@ Options:
   --min_inertia FLOAT      Minimum inertia ratio of blob (default: 0.01)
   --help                   Show this message and exit.
 ```
+---
+### `auto_annotate` = Automatically annotate images
+```
+Usage: auto_annotate [OPTIONS]
+
+  Run auto-annotation on images and optionally upload to GCS
+
+  Args:     image_dir: Directory containing images to annotate     model_path:
+  Path to YOLO model weights     output_dir: Directory to save annotation
+  outputs     out_gcs_path: GCS path to upload results (if None, skip upload)
+
+Options:
+  --image-dir TEXT      Directory containing images to annotate  [required]
+  --model-path TEXT     Path to YOLO model weights  [required]
+  --output-dir TEXT     Directory to save annotation outputs  [required]
+  --out-gcs-path TEXT   Optional GCS path to upload results
+  --conf FLOAT          Confidence threshold for YOLO model
+  --max-images INTEGER  Maximum number of images to annotate. -1 for all images.
+  --help                Show this message and exit.
+```
+Example:
+```
+> auto_annotate --image-dir <IMAGE_DIR> --model-path <MODEL_PATH> --output-dir <OUTPUT_DIR> --out-gcs-path <GCS_PATH>
+```
+
 ---

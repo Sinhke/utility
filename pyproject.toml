@@ -13,6 +13,7 @@ sample_video = "bin.video_sampling:sample_video_for_images"
 prepare_dataset = "bin.prepare_dataset:prepare_training_dataset"
 train_yolo = "bin.train_yolo:train_custom_model"
 yolo_object_extraction = "bin.object_extraction:main"
+auto_annotate = "bin.auto_annotate:auto_annotate"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -24,6 +25,7 @@ pillow = "^10.2.0"
 ultralytics = "^8.1.18"
 click = "^8.1.7"
 scikit-learn = "^1.5.2"
+loguru = "^0.7.3"
 
 
 [build-system]
