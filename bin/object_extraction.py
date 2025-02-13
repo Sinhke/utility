@@ -1,10 +1,11 @@
 import cv2
 import numpy as np
 import os
+import pandas as pd
 from ultralytics import YOLO
 import click
 
-from utility.image_prediction import get_obb_coordinates, get_bbox_coordinates
+from utility.image_prediction import get_rectangle_area, get_result_coordinates
 
 
 def get_center_point(coords):
@@ -61,7 +62,7 @@ def scale_rectangle(coords, scale_factor):
         ]
         scaled_coords.append(new_point)
 
-    return np.array(scaled_coords)
+    return np.array(scaled_coords), center
 
 
 def order_points(pts):
@@ -239,55 +240,79 @@ def draw_blob_detection(image, outdir):
 
 
 def run_prediction_and_extract_image(
-    image_path, model_path, output_dir, confidence_threshold=0.5, scale=1.3
+    image_path, model_path, output_dir, confidence_threshold=0.5, scale=1.3, save_extracted_image=False
 ):
     model = YOLO(model=model_path)
-
+    images = [image_path]
     tracking_parameters = dict(
-        source=[image_path],
+        source=images,
         conf=confidence_threshold,
         device="cpu",
         line_width=1,
     )
 
     results = model.track(**tracking_parameters)
-    bbox_coordinates = get_result_coordinates(results)
+    # For bounding box extraction, we use the original coordinates
+    bbox_coordinates = get_result_coordinates(results, use_normalized_coordinates=False)
 
     # Process results list
     for img_file, bbox_coord in zip(images, bbox_coordinates):
         basename = os.path.basename(img_file).removesuffix(".png")
         img = cv2.imread(img_file)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
+        detected_objects = []
         for idx, coord in enumerate(bbox_coord):
+            flattened_coord = list(np.array(coord).flatten())
             # Create a mask from the polygon coordinates
             # Enlarge polygon based on scale factor
             # [x1, y1], [x2, y2], [x3, y3], [x4, y4]
-            coord = scale_rectangle(coord, scale)
+            scaled_coord, center = scale_rectangle(coord, scale)
+            flattened_coord.append(get_rectangle_area(flattened_coord))
+            flattened_coord.extend(center)
+            detected_objects.append(flattened_coord)
 
-            mask = np.zeros(img.shape[:2], dtype=np.uint8)
-            cv2.fillPoly(mask, [coord], 1)
+            if save_extracted_image:
+                mask = np.zeros(img.shape[:2], dtype=np.uint8)
+                cv2.fillPoly(mask, [scaled_coord], 1)
 
-            # Extract the pixels within the polygon using the mask
-            masked_img = cv2.bitwise_and(img, img, mask=mask)
+                # Extract the pixels within the polygon using the mask
+                masked_img = cv2.bitwise_and(img, img, mask=mask)
 
-            # Get the bounding rectangle of the polygon
-            x, y, w, h = cv2.boundingRect(coord)
-            # Crop to just the bounding rectangle area
-            cropped = masked_img[y : y + h, x : x + w]
-            # Adjust coordinates relative to cropped image by subtracting x,y offset
+                # Get the bounding rectangle of the polygon
+                x, y, w, h = cv2.boundingRect(scaled_coord)
+                # Crop to just the bounding rectangle area
+                cropped = masked_img[y : y + h, x : x + w]
+                # Adjust coordinates relative to cropped image by subtracting x,y offset
 
-            cropped_coord = coord.copy()
-            cropped_coord[:, 0] = coord[:, 0] - x  # Adjust x coordinates
-            cropped_coord[:, 1] = coord[:, 1] - y  # Adjust y coordinates
-            try:
-                rectified_cropped = rectify_image(cropped, cropped_coord)
-                rectified_cropped = crop_image(rectified_cropped, ratio=0.03)
-                output_path = os.path.join(output_dir, f"{basename}_obj_{idx}.png")
-                cv2.imwrite(output_path, rectified_cropped)
+                cropped_coord = scaled_coord.copy()
+                cropped_coord[:, 0] = scaled_coord[:, 0] - x  # Adjust x coordinates
+                cropped_coord[:, 1] = scaled_coord[:, 1] - y  # Adjust y coordinates
+                try:
+                    rectified_cropped = rectify_image(cropped, cropped_coord)
+                    rectified_cropped = crop_image(rectified_cropped, ratio=0.03)
+                    output_path = os.path.join(output_dir, f"{basename}_obj_{idx}.png")
+                    cv2.imwrite(output_path, rectified_cropped)
 
-            except Exception as e:
-                print("Error in rectifying image", e)
+                except Exception as e:
+                    print("Error in rectifying image", e)
+        detected_objects = pd.DataFrame(detected_objects)
+        detected_objects.columns = [
+            "x1",
+            "y1",
+            "x2",
+            "y2",
+            "x3",
+            "y3",
+            "x4",
+            "y4",
+            "cx",
+            "cy",
+            "area",
+        ]
+        detected_objects.index.name = "object_id"
+        detected_objects.to_csv(
+            os.path.join(output_dir, f"{basename}_obj_coordinates.csv")
+        )
 
 
 @click.command()
@@ -310,7 +335,13 @@ def run_prediction_and_extract_image(
     type=float,
     help="Scale factor for enlarging detected objects; this add more leeway to the bounding box (default: 1.3)",
 )
-def object_extraction(image_path, output_dir, model_path, confidence, scale):
+@click.option(
+    "--save_extracted_image",
+    is_flag=True,
+    default=False,
+    help="Save extracted images (default: False)",
+)
+def object_extraction(image_path, output_dir, model_path, confidence, scale, save_extracted_image=False):
     """Run object detection and extract images"""
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
@@ -322,6 +353,7 @@ def object_extraction(image_path, output_dir, model_path, confidence, scale):
         model_path=model_path,
         confidence_threshold=confidence,
         scale=scale,
+        save_extracted_image=save_extracted_image,
     )
 
 

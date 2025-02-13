@@ -58,7 +58,7 @@ def get_bbox_coordinates(bboxes, width, height):
     return bbox_pos
 
 
-def get_result_coordinates(results):
+def get_result_coordinates(results, use_normalized_coordinates=False):
     """
     Extract bounding box coordinates from model predictions.
 
@@ -71,8 +71,10 @@ def get_result_coordinates(results):
     """
     bbox_pos_list = []
     for result in results:
-        if result.obb.xyxyxyxyn is not None:
+        if use_normalized_coordinates and result.obb.xyxyxyxyn is not None:
             bbox_pos = get_obb_coordinates(result.obb.xyxyxyxyn)
+        elif result.obb.xyxyxyxy is not None:
+            bbox_pos = get_obb_coordinates(result.obb.xyxyxyxy)
         elif result.boxes.xywh is not None:
             bbox_pos = get_bbox_coordinates(
                 result.boxes.xywh, result.width, result.height
@@ -83,7 +85,7 @@ def get_result_coordinates(results):
 
 
 def get_initial_prediction(
-    images, model_path, conf=0.5, device="cuda", persist=False, predict=False
+    images, model_path, conf=0.5, device="cuda", persist=False, predict=False, use_normalized_coordinates=True
 ):
     model = YOLO(model_path)
     # Run batched inference on a list of images
@@ -94,7 +96,7 @@ def get_initial_prediction(
             images, conf=conf, device=device, persist=persist, stream=True
         )
     realized_result = {}
-    bbox_coordinates = get_result_coordinates(results)
+    bbox_coordinates = get_result_coordinates(results, use_normalized_coordinates=use_normalized_coordinates)
     # Process results list
     for img_file, result in zip(images, bbox_coordinates):
         # result should contain a list of coordinates for each object in the image
@@ -135,7 +137,7 @@ def create_cvat_importable_annotations(
         shutil.copy(image, os.path.join(image_outdir, os.path.basename(image)))
 
     realized_coordinates = get_initial_prediction(
-        images=images, model_path=model_path, conf=conf
+        images=images, model_path=model_path, conf=conf, use_normalized_coordinates=True
     )
     # Write labels to labels/train directory
     labels_outdir = os.path.join(outdir, "labels/train")
@@ -310,3 +312,18 @@ def generate_speed_color_coded_video(
 
         create_video_from_images(temp_dir, output_video_path)
     return obj_dist_delta_summary
+
+
+def get_rectangle_area(coords):
+    """Get the area of a rectangle from the coordinates of the vertices.
+    The coordinates are expected to be in the format of [x1, y1, x2, y2, x3, y3, x4, y4, ...].
+    Args:
+        coords (list): List of coordinates of the vertices of the rectangle.
+
+    Returns:
+        float: Area of the rectangle.
+    """
+    x1, y1, x2, y2, x3, y3 = coords[:6]
+    width = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+    height = np.sqrt((x3 - x2) ** 2 + (y3 - y2) ** 2)
+    return width * height

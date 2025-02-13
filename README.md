@@ -162,6 +162,7 @@ Options:
   --confidence FLOAT  Confidence threshold for detection (default: 0.5)
   --scale FLOAT       Scale factor for enlarging detected objects; this add
                       more leeway to the bounding box (default: 1.3)
+  --save_extracted_image  Save extracted images (default: False)
   --help              Show this message and exit.
 ```
 ---
