@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 import pandas as pd
 from loguru import logger
+import torch
 from ultralytics import YOLO
 import yaml
 
@@ -27,9 +28,13 @@ def get_obb_coordinates(bboxes):
     """
     bbox_pos = []
     for bbox in bboxes:
-        rectangle = bbox.numpy().reshape((-1, 2))
+        if isinstance(bbox, torch.Tensor):
+            rectangle = bbox.cpu().numpy().reshape((-1, 2))
+        else:
+            rectangle = bbox.numpy().reshape((-1, 2))
         bbox_pos.append(rectangle)
-    print(f"Found {len(bbox_pos)} bounding boxes")
+
+    logger.debug(f"Found {len(bbox_pos)} bounding boxes")
     return bbox_pos
 
 
@@ -58,7 +63,7 @@ def get_bbox_coordinates(bboxes, width, height):
     return bbox_pos
 
 
-def get_result_coordinates(results, use_normalized_coordinates=False):
+def get_result_coordinates(results, use_normalized_coordinates=False, max_frames=-1):
     """
     Extract bounding box coordinates from model predictions.
 
@@ -70,7 +75,9 @@ def get_result_coordinates(results, use_normalized_coordinates=False):
               where each array has shape (4,2) representing 4 corner points
     """
     bbox_pos_list = []
-    for result in results:
+    for idx, result in enumerate(results):
+        if max_frames != -1 and idx >= max_frames:
+            break
         if use_normalized_coordinates and result.obb.xyxyxyxyn is not None:
             bbox_pos = get_obb_coordinates(result.obb.xyxyxyxyn)
         elif result.obb.xyxyxyxy is not None:

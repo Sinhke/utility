@@ -1,0 +1,10 @@
+fliplr: 0.5
+flipud: 0.5
+names:
+  0: shrimp
+path: /mnt/big_disk/dummy_training/
+scale: 0.5
+shear: 0.5
+test: test/images/shrimp
+train: train/images/shrimp
+val: val/images/shrimp
