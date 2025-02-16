@@ -1,7 +1,10 @@
 import os
+import sys
 import click
+from loguru import logger
 import pandas as pd
 from ultralytics import YOLO
+from utility.image_prediction import get_result_coordinates
 
 
 @click.command()
@@ -41,6 +44,13 @@ from ultralytics import YOLO
     default="cuda",
     help="Device to run the model on. Default is cuda.",
 )
+@click.option(
+    "--debug",
+    "-db",
+    type=bool,
+    default=False,
+    help="Debug mode.",
+)
 def process_video(
     input_video,
     model_path,
@@ -49,7 +59,17 @@ def process_video(
     tracker: str = "bytesort.yaml",
     max_frames: int = -1,
     device: str = "cuda",
+    debug: bool = False,
 ):
+    logger.remove()
+    if debug:
+        logger.add(sys.stdout, level="DEBUG")
+        logger.info("Debug mode is enabled. Setting log level to DEBUG.")
+    else:
+        logger.add(sys.stdout, level="INFO")
+
+    logger.info("Starting object tracking...")
+
     model = YOLO(model=model_path)
     detection_result = os.path.join(
         save_dir, f"{os.path.basename(input_video).removesuffix('.mp4')}_detection.csv"
@@ -61,7 +81,7 @@ def process_video(
         stream=True,
         verbose=False,
         project=f"{save_dir}",
-        name=f"{os.path.basename(input_video).split('.')[0]}",
+        name=f"{os.path.basename(input_video).removesuffix('.mp4')}",
         save_dir=save_dir,
         tracker=tracker,
         device=device,
@@ -69,20 +89,21 @@ def process_video(
     )
 
     results = model.track(**tracking_parameters)  # Default tracker is ByteTrack
-    # results is a generator and need to realized in order to save the video
+    bbox_pos = get_result_coordinates(results, max_frames=max_frames)
+    converted_bbox_pos = []
+    for idx, obj in enumerate(bbox_pos):
+        if idx % 100 == 0:
+            logger.info(f"Processed {idx} frames")
 
-    bbox_pos = []
-    for idx, result in enumerate(results):
-        if max_frames != -1 and idx >= max_frames:
-            break
-
-        for bbox in result.boxes.xywh:
-            frame_and_coord = [idx]
-            frame_and_coord = frame_and_coord + bbox.tolist()
-            bbox_pos.append(frame_and_coord)
-
-    bbox_df = pd.DataFrame(bbox_pos, columns=["frame", "x", "y", "width", "height"])
-    bbox_df.to_csv(detection_result, index=False)
+        obj = [[idx] + elem.reshape(-1).tolist() for elem in obj if len(elem) > 1]
+        for elem in obj:
+            if len(elem) > 1:
+                converted_bbox_pos.append(elem)
+    try:
+        bbox_df = pd.DataFrame(converted_bbox_pos, columns=["frame", "x1", "y1", "x2", "y2", "x3", "y3", "x4", "y4"])
+        bbox_df.to_csv(detection_result, index=False)
+    except ValueError as e:
+        logger.warning("No bounding boxes found in the video.")
 
 
 if __name__ == "__main__":

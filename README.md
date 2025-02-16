@@ -15,16 +15,19 @@
 > poetry install
 ```
 
-## Use the existing virtual environment
-This environment should have this repo already installed
+## If you want to install it in a venv
+If you want to install it in a venv, you can do the following:
 ```
-source /home/jupyter/.venv/dev_env/bin/activate
+> poetry shell 
+> poetry install
+
 ```
 
 ## Available executables
 ### `sample_video` = Sample images from video
 ```
 Usage: sample_video [OPTIONS]
+Randomly sample images from video.
 
 Options:
   -i, --input_video PATH
@@ -62,8 +65,9 @@ Options:
 ```
 Usage: train_yolo [OPTIONS]
 
-  Training YOLO v8 Fine tune the latest YOLO v8 or resume training of a given
-  model.
+  Training YOLO v11 Fine tune the latest YOLO v11 or resume training of a given
+  model. Use `-obb.pt` for Oriented Bounding Box model.
+
 
 Options:
   --config_yaml TEXT      Path to the config YAML file.  [required]
@@ -113,7 +117,7 @@ Options:
   --help                          Show this message and exit.
 ```
 ---
-### `yolo_track_stream` = Run tracking in realtime and shows the tracked video.
+### [DEPRECATED] `yolo_track_stream` = Run tracking in realtime and shows the tracked video.
 ```
 Usage: yolo_track_stream [OPTIONS]
 

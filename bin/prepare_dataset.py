@@ -1,14 +1,12 @@
-import os
-import click
-import yaml
 import glob
-
-from sklearn.model_selection import train_test_split
+import os
 import shutil
 
+import click
+import yaml
+from sklearn.model_selection import train_test_split
 
-# label_path = "/mnt/big_disk/freshwater_test/labels/"
-# image_path = "/mnt/big_disk/freshwater_test/images/"
+from utility.constants import DEFAULT_CONFIG_YAML
 
 
 def get_image_and_label_list(image_path, label_path):
@@ -53,12 +51,17 @@ def get_image_and_label_list(image_path, label_path):
 )
 @click.option(
     "--config-template",
-    required=True,
-    type=click.Path(exists=True, dir_okay=False),
-    help="Path to the YAML configuration template.",
+    required=False,
+    default=DEFAULT_CONFIG_YAML,
+    type=click.Path(file_okay=True),
+    help=f"Path to the YAML configuration template. Default: {DEFAULT_CONFIG_YAML}",
 )
 def prepare_training_dataset(
-    image_path, label_path, out_training_data_dir, config_name, config_template
+    image_path,
+    label_path,
+    out_training_data_dir,
+    config_name,
+    config_template=DEFAULT_CONFIG_YAML,
 ):
     """
     This CLI tool prepares the training dataset for YOLO training. It takes the path to the images and labels directory.
