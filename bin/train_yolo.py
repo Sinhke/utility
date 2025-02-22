@@ -64,7 +64,7 @@ def train_custom_model(
         weight_decay=0.05,
         lr0=0.1,
         dropout=0.1,
-        patience=30,  # Number of epochs to wait to stop if no improvement.
+        # patience=30,  # Number of epochs to wait to stop if no improvement.
         resume=True if resume_training else False,
     )
 
