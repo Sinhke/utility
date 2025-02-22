@@ -215,3 +215,39 @@ Example:
 ```
 
 ---
+### `detect_shrimp_gut` = Detect shrimp gut and eyes
+```
+Usage: detect_shrimp_gut [OPTIONS]
+
+  Process images in an image_dir for shrimp eye and gut detection. Outputs
+  good and bad images in output_dir.
+
+  Args:     image_dir (str): Path to input directory     output_dir (str):
+  Path to output directory     min_percentile (float): Minimum percentile for
+  thresholding. Default is 5. This is needed to remove the background.
+  min_area_ratio (float): Minimum area ratio for blob detection. Default is
+  0.001.     max_area_ratio (float): Maximum area ratio for blob detection.
+  Default is 0.3. Max liver size is 30% of the image.     max_angle (float):
+  Maximum angle between potential eyes. Default is 100.
+
+Options:
+  --image-dir PATH            Path to input directory  [required]
+  --output-dir PATH           Path to output directory  [required]
+  --min-percentile FLOAT      Minimum percentile for thresholding. Default is
+                              5. This is needed to remove the background.
+  --min-area-ratio FLOAT      Minimum area ratio for blob detection. Default
+                              is 0.001.
+  --max-area-ratio FLOAT      Maximum area ratio for blob detection. Default
+                              is 0.3. Max liver size is 30% of the image.
+  --max-angle FLOAT           Maximum angle between potential eyes. Default is
+                              100.
+  --max-distance-ratio FLOAT  Maximum distance ratio from gut to eyes. Default
+                              is 30% of the image.
+  --help                      Show this message and exit.
+```
+Example:
+```
+> detect_shrimp_gut --image-dir <IMAGE_DIR> --output-dir <OUTPUT_DIR>
+```
+
+---

@@ -14,7 +14,7 @@ prepare_dataset = "bin.prepare_dataset:prepare_training_dataset"
 train_yolo = "bin.train_yolo:train_custom_model"
 yolo_object_extraction = "bin.object_extraction:main"
 auto_annotate = "bin.auto_annotate:auto_annotate"
-
+detect_shrimp_gut = "bin.detect_shrimp_gut:classify_shrimp_images"
 [tool.poetry.dependencies]
 python = "^3.10"
 numpy = "^1.26.4"
