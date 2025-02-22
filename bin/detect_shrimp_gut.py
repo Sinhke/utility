@@ -193,6 +193,7 @@ def classify_shrimp_images(
         min_area_ratio (float): Minimum area ratio for blob detection. Default is 0.001.
         max_area_ratio (float): Maximum area ratio for blob detection. Default is 0.3. Max liver size is 30% of the image.
         max_angle (float): Maximum angle between potential eyes. Default is 100.
+        max_distance_ratio (float): Maximum distance ratio from gut to eyes. Default is 30% of the image.
     """
     image_files = sorted(glob.glob(os.path.join(image_dir, "*.png")))
     logger.info(f"Found {len(image_files)} images to process")

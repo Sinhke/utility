@@ -219,17 +219,28 @@ Example:
 ```
 Usage: detect_shrimp_gut [OPTIONS]
 
-  Process images in an image_dir for shrimp eye and gut detection. Outputs
-  good and bad images in output_dir.
+    Process images in an image_dir for shrimp eye and gut detection.
+    Outputs good and bad images in output_dir.
 
-  Args:     image_dir (str): Path to input directory     output_dir (str):
-  Path to output directory     min_percentile (float): Minimum percentile for
-  thresholding. Default is 5. This is needed to remove the background.
-  min_area_ratio (float): Minimum area ratio for blob detection. Default is
-  0.001.     max_area_ratio (float): Maximum area ratio for blob detection.
-  Default is 0.3. Max liver size is 30% of the image.     max_angle (float):
-  Maximum angle between potential eyes. Default is 100.
+    This function does the following:
+    - Remove background from the image by thresholding at a certain percentile; eye and gut are usually darker than the background.
+    - Detects the blobs in the image.
+    - Sorts the blobs by diameter.
+    - Selects the largest blob as the gut.
+    - Calculates the distance of the other blobs to the gut.
+    - Selects the blobs within a certain distance as potential eyes.
+    - Calculates the angle between the gut and the potential eyes.
+    - Selects the potential eyes within a certain angle.
+    - Saves the good and bad images in the output_dir
 
+    Args:
+        image_dir (str): Path to input directory
+        output_dir (str): Path to output directory
+        min_percentile (float): Minimum percentile for thresholding. Default is 5. This is needed to remove the background.
+        min_area_ratio (float): Minimum area ratio for blob detection. Default is 0.001.
+        max_area_ratio (float): Maximum area ratio for blob detection. Default is 0.3. Max liver size is 30% of the image.
+        max_angle (float): Maximum angle between potential eyes. Default is 100.
+        max_distance_ratio (float): Maximum distance ratio from gut to eyes. Default is 30% of the image.
 Options:
   --image-dir PATH            Path to input directory  [required]
   --output-dir PATH           Path to output directory  [required]
