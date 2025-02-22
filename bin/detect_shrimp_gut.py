@@ -175,6 +175,17 @@ def classify_shrimp_images(
     Process images in an image_dir for shrimp eye and gut detection.
     Outputs good and bad images in output_dir.
 
+    This function does the following:
+    - Remove background from the image by thresholding at a certain percentile; eye and gut are usually darker than the background.
+    - Detects the blobs in the image.
+    - Sorts the blobs by diameter.
+    - Selects the largest blob as the gut.
+    - Calculates the distance of the other blobs to the gut.
+    - Selects the blobs within a certain distance as potential eyes.
+    - Calculates the angle between the gut and the potential eyes.
+    - Selects the potential eyes within a certain angle.
+    - Saves the good and bad images in the output_dir
+
     Args:
         image_dir (str): Path to input directory
         output_dir (str): Path to output directory
